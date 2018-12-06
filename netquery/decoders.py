@@ -9,9 +9,9 @@ A set of decoder modules.
 Each decoder takes pairs of embeddings and predicts relationship scores given these embeddings.
 """
 
-""" 
+"""
 *Edge decoders*
-For all edge decoders, the forward method returns a simple relationships score, 
+For all edge decoders, the forward method returns a simple relationships score,
 i.e. the likelihood of an edge, between a pair of nodes.
 """
 
@@ -89,7 +89,7 @@ class TransEEdgeDecoder(nn.Module):
         trans_dist = (trans_embed - embeds2).pow(2).sum(0)
         return trans_dist
 
-    
+
 
 class BilinearDiagEdgeDecoder(nn.Module):
     """
@@ -112,11 +112,11 @@ class BilinearDiagEdgeDecoder(nn.Module):
         acts = (embeds1*self.vecs[rel].unsqueeze(1).expand(self.vecs[rel].size(0), embeds1.size(1))*embeds2).sum(0)
         return acts
 
- 
 
-""" 
+
+"""
 *Metapath decoders*
-For all metapath encoders, the forward method returns a compositonal relationships score, 
+For all metapath encoders, the forward method returns a compositonal relationships score,
 i.e. the likelihood of compositonional relationship or metapath, between a pair of nodes.
 """
 
@@ -136,7 +136,7 @@ class BilinearMetapathDecoder(nn.Module):
             for r2 in relations[r1]:
                 rel = (r1, r2[1], r2[0])
                 self.mats[rel] = nn.Parameter(torch.FloatTensor(dims[rel[0]], dims[rel[2]]))
-                init.xavier_uniform(self.mats[rel])
+                init.xavier_uniform_(self.mats[rel])
                 self.register_parameter("_".join(rel), self.mats[rel])
 
     def forward(self, embeds1, embeds2, rels):
@@ -150,7 +150,7 @@ class BilinearMetapathDecoder(nn.Module):
         return self.mats[rel].mm(embeds)
 
 
-   
+
 class DotBilinearMetapathDecoder(nn.Module):
     """
     Each edge type is represented by a matrix, and
@@ -256,7 +256,7 @@ class TensorIntersection(nn.Module):
             self.register_parameter(mode+"_mat", self.inter_tensors[mode])
 
     def forward(self, embeds1, embeds2, mode):
-        inter_tensor = self.inter_tensors[mode] 
+        inter_tensor = self.inter_tensors[mode]
         tensor_size = inter_tensor.size()
         inter_tensor = inter_tensor.view(tensor_size[0]*tensor_size[1], tensor_size[2])
 
@@ -279,10 +279,10 @@ class SetIntersection(nn.Module):
         self.agg_func = agg_func
         for mode in mode_dims:
             self.pre_mats[mode] = nn.Parameter(torch.FloatTensor(expand_dims[mode], mode_dims[mode]))
-            init.xavier_uniform(self.pre_mats[mode])
+            init.xavier_uniform_(self.pre_mats[mode])
             self.register_parameter(mode+"_premat", self.pre_mats[mode])
             self.post_mats[mode] = nn.Parameter(torch.FloatTensor(mode_dims[mode], expand_dims[mode]))
-            init.xavier_uniform(self.post_mats[mode])
+            init.xavier_uniform_(self.post_mats[mode])
             self.register_parameter(mode+"_postmat", self.post_mats[mode])
 
     def forward(self, embeds1, embeds2, mode, embeds3 = []):
@@ -298,7 +298,7 @@ class SetIntersection(nn.Module):
             combined = combined[0]
         combined = self.post_mats[mode].mm(combined)
         return combined
-       
+
 class SimpleSetIntersection(nn.Module):
     """
     Decoder that computes the implicit intersection between two state vectors.

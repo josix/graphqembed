@@ -55,8 +55,8 @@ def eval_auc_queries(test_queries, enc_dec, batch_size=1000, hard_negatives=Fals
 
             formula_labels.extend([1 for _ in xrange(len(lengths))])
             formula_labels.extend([0 for _ in xrange(len(negatives))])
-            batch_scores = enc_dec.forward(formula, 
-                    batch_queries+[b for i, b in enumerate(batch_queries) for _ in range(lengths[i])], 
+            batch_scores = enc_dec.forward(formula,
+                    batch_queries+[b for i, b in enumerate(batch_queries) for _ in range(lengths[i])],
                     [q.target_node for q in batch_queries] + negatives)
             batch_scores = batch_scores.data.tolist()
             formula_predictions.extend(batch_scores)
@@ -66,7 +66,7 @@ def eval_auc_queries(test_queries, enc_dec, batch_size=1000, hard_negatives=Fals
     overall_auc = roc_auc_score(labels, np.nan_to_num(predictions))
     return overall_auc, formula_aucs
 
-    
+
 def eval_perc_queries(test_queries, enc_dec, batch_size=1000, hard_negatives=False):
     perc_scores = []
     for formula in test_queries:
@@ -83,14 +83,14 @@ def eval_perc_queries(test_queries, enc_dec, batch_size=1000, hard_negatives=Fal
                 negatives = [n for j in range(offset, max_index) for n in formula_queries[j].neg_samples]
             offset += batch_size
 
-            batch_scores = enc_dec.forward(formula, 
-                    batch_queries+[b for i, b in enumerate(batch_queries) for _ in range(lengths[i])], 
+            batch_scores = enc_dec.forward(formula,
+                    batch_queries+[b for i, b in enumerate(batch_queries) for _ in range(lengths[i])],
                     [q.target_node for q in batch_queries] + negatives)
             batch_scores = batch_scores.data.tolist()
             perc_scores.extend(_get_perc_scores(batch_scores, lengths))
     return np.mean(perc_scores)
 
-def get_encoder(depth, graph, out_dims, feature_modules, cuda): 
+def get_encoder(depth, graph, out_dims, feature_modules, cuda):
     if depth < 0 or depth > 3:
         raise Exception("Depth must be between 0 and 3 (inclusive)")
 
@@ -98,28 +98,28 @@ def get_encoder(depth, graph, out_dims, feature_modules, cuda):
          enc = DirectEncoder(graph.features, feature_modules)
     else:
         aggregator1 = MeanAggregator(graph.features)
-        enc1 = Encoder(graph.features, 
-                graph.feature_dims, 
-                out_dims, 
-                graph.relations, 
-                graph.adj_lists, feature_modules=feature_modules, 
+        enc1 = Encoder(graph.features,
+                graph.feature_dims,
+                out_dims,
+                graph.relations,
+                graph.adj_lists, feature_modules=feature_modules,
                 cuda=cuda, aggregator=aggregator1)
         enc = enc1
         if depth >= 2:
             aggregator2 = MeanAggregator(lambda nodes, mode : enc1(nodes, mode).t().squeeze())
             enc2 = Encoder(lambda nodes, mode : enc1(nodes, mode).t().squeeze(),
-                    enc1.out_dims, 
-                    out_dims, 
-                    graph.relations, 
+                    enc1.out_dims,
+                    out_dims,
+                    graph.relations,
                     graph.adj_lists, base_model=enc1,
                     cuda=cuda, aggregator=aggregator2)
             enc = enc2
             if depth >= 3:
                 aggregator3 = MeanAggregator(lambda nodes, mode : enc2(nodes, mode).t().squeeze())
                 enc3 = Encoder(lambda nodes, mode : enc1(nodes, mode).t().squeeze(),
-                        enc2.out_dims, 
-                        out_dims, 
-                        graph.relations, 
+                        enc2.out_dims,
+                        out_dims,
+                        graph.relations,
                         graph.adj_lists, base_model=enc2,
                         cuda=cuda, aggregator=aggregator3)
                 enc = enc3

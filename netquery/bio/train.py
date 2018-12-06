@@ -10,7 +10,7 @@ from torch import optim
 
 parser = ArgumentParser()
 parser.add_argument("--embed_dim", type=int, default=64)
-parser.add_argument("--data_dir", type=str, default="./bio_data/")
+parser.add_argument("--data_dir", type=str, default="./data")
 parser.add_argument("--lr", type=float, default=0.01)
 parser.add_argument("--depth", type=int, default=0)
 parser.add_argument("--batch_size", type=int, default=512)
@@ -34,7 +34,7 @@ out_dims = {mode: args.embed_dim for mode in graph.relations}
 
 print "Loading embed data.."
 id_to_embed = load_embed(args.data_dir)
-
+"""
 print "Loading edge data.."
 train_queries = load_queries_by_formula(args.data_dir + "/train_edges.pkl")
 val_queries = load_test_queries_by_formula(args.data_dir + "/val_edges.pkl")
@@ -51,13 +51,13 @@ for i in range(2, 4):
         args.data_dir + "/test_queries_{:d}.pkl".format(i))
     test_queries["one_neg"].update(i_test_queries["one_neg"])
     test_queries["full_neg"].update(i_test_queries["full_neg"])
-
+"""
 
 enc = get_encoder(args.depth, graph, out_dims, feature_modules, args.cuda)
 dec = get_metapath_decoder(graph, enc.out_dims if args.depth > 0 else out_dims, args.decoder)
 inter_dec = get_intersection_decoder(graph, out_dims, args.inter_decoder)
-
 enc_dec = QueryEncoderDecoder(graph, enc, dec, inter_dec)
+
 if args.cuda:
     enc_dec.cuda()
 

@@ -5,7 +5,7 @@ import torch
 def check_conv(vals, window=2, tol=1e-6):
     if len(vals) < 2 * window:
         return False
-    conv = np.mean(vals[-window:]) - np.mean(vals[-2*window:-window]) 
+    conv = np.mean(vals[-window:]) - np.mean(vals[-2*window:-window])
     return conv < tol
 
 def update_loss(loss, losses, ema_loss, ema_alpha=0.01):
@@ -46,7 +46,7 @@ def run_train(model, optimizer, train_queries, val_queries, test_queries, logger
     losses = []
     conv_test = None
     for i in xrange(max_iter):
-        
+
         optimizer.zero_grad()
         loss = run_batch(train_queries["1-chain"], model, i, batch_size)
         if not edge_conv and (check_conv(vals) or len(losses) >= max_burn_in):
@@ -60,7 +60,7 @@ def run_train(model, optimizer, train_queries, val_queries, test_queries, logger
             vals = []
             if not model_file is None:
                 torch.save(model.state_dict(), model_file+"-edge_conv")
-        
+
         if edge_conv:
             for query_type in train_queries:
                 if query_type == "1-chain":
@@ -77,17 +77,17 @@ def run_train(model, optimizer, train_queries, val_queries, test_queries, logger
         losses, ema_loss = update_loss(loss.data[0], losses, ema_loss)
         loss.backward()
         optimizer.step()
-            
+
         if i % log_every == 0:
             logger.info("Iter: {:d}; ema_loss: {:f}".format(i, ema_loss))
-            
+
         if i >= val_every and i % val_every == 0:
             v = run_eval(model, val_queries, i, logger)
             if edge_conv:
                 vals.append(np.mean(v.values()))
             else:
                 vals.append(v["1-chain"])
-    
+
     v = run_eval(model, test_queries, i, logger)
     logger.info("Test macro-averaged val: {:f}".format(np.mean(v.values())))
     logger.info("Improvement from edge conv: {:f}".format((np.mean(v.values())-conv_test)/conv_test))
@@ -95,7 +95,7 @@ def run_train(model, optimizer, train_queries, val_queries, test_queries, logger
 def run_batch(train_queries, enc_dec, iter_count, batch_size, hard_negatives=False):
     num_queries = [float(len(queries)) for queries in train_queries.values()]
     denom = float(sum(num_queries))
-    formula_index = np.argmax(np.random.multinomial(1, 
+    formula_index = np.argmax(np.random.multinomial(1,
             np.array(num_queries)/denom))
     formula = train_queries.keys()[formula_index]
     n = len(train_queries[formula])
