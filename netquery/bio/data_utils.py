@@ -9,7 +9,7 @@ from netquery.data_utils import parallel_sample, load_queries_by_type, sample_cl
 from netquery.graph import Graph, Query, _reverse_edge
 
 
-def load_graph(data_dir, embed_dim):
+def load_graph(data_dir, embed_dim, id_to_embed):
     rels, adj_lists, node_maps = pickle.load(open(data_dir + "/graph_data.pkl", "rb"))
     node_maps = {m: {n: i for i, n in enumerate(id_list)} for m, id_list in node_maps.iteritems()}
     for m in node_maps:
@@ -19,7 +19,7 @@ def load_graph(data_dir, embed_dim):
     for mode in rels:
         feature_modules[mode].weight.data.normal_(0, 1. / embed_dim)
     features = lambda nodes, mode: feature_modules[mode](
-        torch.autograd.Variable(torch.LongTensor([node_maps[mode][n] for n in nodes]) + 1))
+        torch.autograd.Variable(torch.FloatTensor([node_maps[mode][n] for n in nodes] if mode != 'song' else [id_to_embed[n] for n in nodes]) + 1))
     graph = Graph(features, feature_dims, rels, adj_lists)
     return graph, feature_modules, node_maps
 

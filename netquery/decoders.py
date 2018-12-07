@@ -15,6 +15,7 @@ For all edge decoders, the forward method returns a simple relationships score,
 i.e. the likelihood of an edge, between a pair of nodes.
 """
 
+
 class CosineEdgeDecoder(nn.Module):
     """
     Simple decoder where the relationship score is just the cosine
@@ -29,6 +30,7 @@ class CosineEdgeDecoder(nn.Module):
     def forward(self, embeds1, embeds2, rel):
         return self.cos(embeds1, embeds2)
 
+
 class DotProductEdgeDecoder(nn.Module):
     """
     Simple decoder where the relationship score is just the dot product
@@ -42,6 +44,7 @@ class DotProductEdgeDecoder(nn.Module):
     def forward(self, embeds1, embeds2, rel):
         dots = torch.sum(embeds1 * embeds2, dim=0)
         return dots
+
 
 class BilinearEdgeDecoder(nn.Module):
     """
@@ -58,14 +61,14 @@ class BilinearEdgeDecoder(nn.Module):
             for r2 in relations[r1]:
                 rel = (r1, r2[1], r2[0])
                 self.mats[rel] = nn.Parameter(
-                        torch.FloatTensor(dims[rel[0]], dims[rel[2]]))
+                    torch.FloatTensor(dims[rel[0]], dims[rel[2]]))
                 init.xavier_uniform(self.mats[rel])
                 self.register_parameter("_".join(rel), self.mats[rel])
-
 
     def forward(self, embeds1, embeds2, rel):
         acts = embeds1.t().mm(self.mats[rel])
         return self.cos(acts.t(), embeds2)
+
 
 class TransEEdgeDecoder(nn.Module):
     """
@@ -81,14 +84,15 @@ class TransEEdgeDecoder(nn.Module):
             for r2 in relations[r1]:
                 rel = (r1, r2[1], r2[0])
                 self.vecs[rel] = nn.Parameter(torch.FloatTensor(dims[rel[0]]))
-                init.uniform(self.vecs[rel], a=-6.0/np.sqrt(dims[rel[0]]), b=6.0/np.sqrt(dims[rel[0]]))
+                init.uniform(self.vecs[rel], a=-6.0 / np.sqrt(dims[rel[0]]),
+                             b=6.0 / np.sqrt(dims[rel[0]]))
                 self.register_parameter("_".join(rel), self.vecs[rel])
 
     def forward(self, embeds1, embeds2, rel):
-        trans_embed = embeds1 + self.vecs[rel].unsqueeze(1).expand(self.vecs[rel].size(0), embeds1.size(1))
+        trans_embed = embeds1 + \
+            self.vecs[rel].unsqueeze(1).expand(self.vecs[rel].size(0), embeds1.size(1))
         trans_dist = (trans_embed - embeds2).pow(2).sum(0)
         return trans_dist
-
 
 
 class BilinearDiagEdgeDecoder(nn.Module):
@@ -105,13 +109,14 @@ class BilinearDiagEdgeDecoder(nn.Module):
             for r2 in relations[r1]:
                 rel = (r1, r2[1], r2[0])
                 self.vecs[rel] = nn.Parameter(torch.FloatTensor(dims[rel[0]]))
-                init.uniform(self.vecs[rel], a=-6.0/np.sqrt(dims[rel[0]]), b=6.0/np.sqrt(dims[rel[0]]))
+                init.uniform(self.vecs[rel], a=-6.0 / np.sqrt(dims[rel[0]]),
+                             b=6.0 / np.sqrt(dims[rel[0]]))
                 self.register_parameter("_".join(rel), self.vecs[rel])
 
     def forward(self, embeds1, embeds2, rel):
-        acts = (embeds1*self.vecs[rel].unsqueeze(1).expand(self.vecs[rel].size(0), embeds1.size(1))*embeds2).sum(0)
+        acts = (
+            embeds1 * self.vecs[rel].unsqueeze(1).expand(self.vecs[rel].size(0), embeds1.size(1)) * embeds2).sum(0)
         return acts
-
 
 
 """
@@ -119,6 +124,7 @@ class BilinearDiagEdgeDecoder(nn.Module):
 For all metapath encoders, the forward method returns a compositonal relationships score,
 i.e. the likelihood of compositonional relationship or metapath, between a pair of nodes.
 """
+
 
 class BilinearMetapathDecoder(nn.Module):
     """
@@ -150,7 +156,6 @@ class BilinearMetapathDecoder(nn.Module):
         return self.mats[rel].mm(embeds)
 
 
-
 class DotBilinearMetapathDecoder(nn.Module):
     """
     Each edge type is represented by a matrix, and
@@ -166,7 +171,7 @@ class DotBilinearMetapathDecoder(nn.Module):
             for r2 in relations[r1]:
                 rel = (r1, r2[1], r2[0])
                 self.mats[rel] = nn.Parameter(torch.FloatTensor(dims[rel[0]], dims[rel[2]]))
-                #init.xavier_uniform(self.mats[rel])
+                # init.xavier_uniform(self.mats[rel])
                 init.normal(self.mats[rel], std=0.1)
                 self.register_parameter("_".join(rel), self.mats[rel])
 
@@ -193,14 +198,16 @@ class TransEMetapathDecoder(nn.Module):
             for r2 in relations[r1]:
                 rel = (r1, r2[1], r2[0])
                 self.vecs[rel] = nn.Parameter(torch.FloatTensor(dims[rel[0]]))
-                init.uniform(self.vecs[rel], a=-6.0/np.sqrt(dims[rel[0]]), b=6.0/np.sqrt(dims[rel[0]]))
+                init.uniform(self.vecs[rel], a=-6.0 / np.sqrt(dims[rel[0]]),
+                             b=6.0 / np.sqrt(dims[rel[0]]))
                 self.register_parameter("_".join(rel), self.vecs[rel])
         self.cos = nn.CosineSimilarity(dim=0)
 
     def forward(self, embeds1, embeds2, rels):
         trans_embed = embeds1
         for i_rel in rels:
-            trans_embed += self.vecs[i_rel].unsqueeze(1).expand(self.vecs[i_rel].size(0), embeds1.size(1))
+            trans_embed += self.vecs[i_rel].unsqueeze(1).expand(
+                self.vecs[i_rel].size(0), embeds1.size(1))
         trans_dist = self.cos(embeds2, trans_embed)
         return trans_dist
 
@@ -222,30 +229,33 @@ class BilinearDiagMetapathDecoder(nn.Module):
             for r2 in relations[r1]:
                 rel = (r1, r2[1], r2[0])
                 self.vecs[rel] = nn.Parameter(torch.FloatTensor(dims[rel[0]]))
-                init.uniform(self.vecs[rel], a=-6.0/np.sqrt(dims[rel[0]]), b=6.0/np.sqrt(dims[rel[0]]))
+                init.uniform(self.vecs[rel], a=-6.0 / np.sqrt(dims[rel[0]]),
+                             b=6.0 / np.sqrt(dims[rel[0]]))
                 self.register_parameter("_".join(rel), self.vecs[rel])
 
     def forward(self, embeds1, embeds2, rels):
         acts = embeds1
         for i_rel in rels:
-            acts = acts*self.vecs[i_rel].unsqueeze(1).expand(self.vecs[i_rel].size(0), embeds1.size(1))
-        acts = (acts*embeds2).sum(0)
+            acts = acts * \
+                self.vecs[i_rel].unsqueeze(1).expand(self.vecs[i_rel].size(0), embeds1.size(1))
+        acts = (acts * embeds2).sum(0)
         return acts
 
     def project(self, embeds, rel):
-        return embeds*self.vecs[rel].unsqueeze(1).expand(self.vecs[rel].size(0), embeds.size(1))
-
+        return embeds * self.vecs[rel].unsqueeze(1).expand(self.vecs[rel].size(0), embeds.size(1))
 
 
 """
 Set intersection operators. (Experimental)
 """
 
+
 class TensorIntersection(nn.Module):
     """
     Decoder that computes the implicit intersection between two state vectors
     Uses a symmetric tensor operation.
     """
+
     def __init__(self, dims):
         super(TensorIntersection, self).__init__()
         self.inter_tensors = {}
@@ -253,39 +263,44 @@ class TensorIntersection(nn.Module):
             dim = dims[mode]
             self.inter_tensors[mode] = nn.Parameter(torch.FloatTensor(dim, dim, dim))
             init.xavier_uniform(self.inter_tensors[mode])
-            self.register_parameter(mode+"_mat", self.inter_tensors[mode])
+            self.register_parameter(mode + "_mat", self.inter_tensors[mode])
 
     def forward(self, embeds1, embeds2, mode):
         inter_tensor = self.inter_tensors[mode]
         tensor_size = inter_tensor.size()
-        inter_tensor = inter_tensor.view(tensor_size[0]*tensor_size[1], tensor_size[2])
+        inter_tensor = inter_tensor.view(tensor_size[0] * tensor_size[1], tensor_size[2])
 
         temp1 = inter_tensor.mm(embeds1)
         temp1 = temp1.view(tensor_size[0], tensor_size[1], embeds2.size(1))
         temp2 = inter_tensor.mm(embeds2)
         temp2 = temp2.view(tensor_size[0], tensor_size[1], embeds2.size(1))
-        result = (temp1*temp2).sum(dim=1)
+        result = (temp1 * temp2).sum(dim=1)
         return result
+
 
 class SetIntersection(nn.Module):
     """
     Decoder that computes the implicit intersection between two state vectors
     Applies an MLP and takes elementwise mins.
     """
+
     def __init__(self, mode_dims, expand_dims, agg_func=torch.min):
         super(SetIntersection, self).__init__()
         self.pre_mats = {}
         self.post_mats = {}
         self.agg_func = agg_func
         for mode in mode_dims:
-            self.pre_mats[mode] = nn.Parameter(torch.FloatTensor(expand_dims[mode], mode_dims[mode]))
+            self.pre_mats[mode] = nn.Parameter(
+                torch.FloatTensor(expand_dims[mode], mode_dims[mode]))
             init.xavier_uniform_(self.pre_mats[mode])
-            self.register_parameter(mode+"_premat", self.pre_mats[mode])
-            self.post_mats[mode] = nn.Parameter(torch.FloatTensor(mode_dims[mode], expand_dims[mode]))
+            self.register_parameter(mode + "_premat", self.pre_mats[mode])
+            self.post_mats[mode] = nn.Parameter(
+                torch.FloatTensor(mode_dims[mode], expand_dims[mode]))
             init.xavier_uniform_(self.post_mats[mode])
-            self.register_parameter(mode+"_postmat", self.post_mats[mode])
+            self.register_parameter(mode + "_postmat", self.post_mats[mode])
 
-    def forward(self, embeds1, embeds2, mode, embeds3 = []):
+    def forward(self, embeds1, embeds2, mode, embeds3=[]):
+        print mode
         temp1 = F.relu(self.pre_mats[mode].mm(embeds1))
         temp2 = F.relu(self.pre_mats[mode].mm(embeds2))
         if len(embeds3) > 0:
@@ -293,22 +308,24 @@ class SetIntersection(nn.Module):
             combined = torch.stack([temp1, temp2, temp3])
         else:
             combined = torch.stack([temp1, temp2])
-        combined = self.agg_func(combined,dim=0)
+        combined = self.agg_func(combined, dim=0)
         if type(combined) == tuple:
             combined = combined[0]
         combined = self.post_mats[mode].mm(combined)
         return combined
+
 
 class SimpleSetIntersection(nn.Module):
     """
     Decoder that computes the implicit intersection between two state vectors.
     Takes a simple element-wise min.
     """
+
     def __init__(self, agg_func=torch.min):
         super(SimpleSetIntersection, self).__init__()
         self.agg_func = agg_func
 
-    def forward(self, embeds1, embeds2, mode, embeds3 = []):
+    def forward(self, embeds1, embeds2, mode, embeds3=[]):
         if len(embeds3) > 0:
             combined = torch.stack([embeds1, embeds2, embeds3])
         else:

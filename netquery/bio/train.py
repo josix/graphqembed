@@ -10,7 +10,7 @@ from torch import optim
 
 parser = ArgumentParser()
 parser.add_argument("--embed_dim", type=int, default=64)
-parser.add_argument("--data_dir", type=str, default="./data")
+parser.add_argument("--data_dir", type=str, default="./data/pkl-100w")
 parser.add_argument("--lr", type=float, default=0.01)
 parser.add_argument("--depth", type=int, default=0)
 parser.add_argument("--batch_size", type=int, default=512)
@@ -26,14 +26,15 @@ parser.add_argument("--inter_decoder", type=str, default="mean")
 parser.add_argument("--opt", type=str, default="adam")
 args = parser.parse_args()
 
+print "Loading embed data.."
+id_to_embed = load_embed(args.data_dir)
+
 print "Loading graph data.."
-graph, feature_modules, node_maps = load_graph(args.data_dir, args.embed_dim)
+graph, feature_modules, node_maps = load_graph(args.data_dir, args.embed_dim, id_to_embed)
 if args.cuda:
     graph.features = cudify(feature_modules, node_maps)
 out_dims = {mode: args.embed_dim for mode in graph.relations}
 
-print "Loading embed data.."
-id_to_embed = load_embed(args.data_dir)
 """
 print "Loading edge data.."
 train_queries = load_queries_by_formula(args.data_dir + "/train_edges.pkl")
@@ -52,7 +53,6 @@ for i in range(2, 4):
     test_queries["one_neg"].update(i_test_queries["one_neg"])
     test_queries["full_neg"].update(i_test_queries["full_neg"])
 """
-
 enc = get_encoder(args.depth, graph, out_dims, feature_modules, args.cuda)
 dec = get_metapath_decoder(graph, enc.out_dims if args.depth > 0 else out_dims, args.decoder)
 inter_dec = get_intersection_decoder(graph, out_dims, args.inter_decoder)
@@ -82,7 +82,8 @@ model_file = args.model_dir + "/{data:s}-{depth:d}-{embed_dim:d}-{lr:f}-{decoder
     decoder=args.decoder,
     inter_decoder=args.inter_decoder)
 logger = setup_logging(log_file)
-
+"""
 run_train(enc_dec, optimizer, train_queries, val_queries, test_queries, logger,
           max_burn_in=args.max_burn_in, val_every=args.val_every, max_iter=args.max_iter, model_file=model_file)
 torch.save(enc_dec.state_dict(), model_file)
+"""
