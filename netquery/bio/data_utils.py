@@ -19,7 +19,7 @@ def load_graph(data_dir, embed_dim, id_to_embed):
     for mode in rels:
         feature_modules[mode].weight.data.normal_(0, 1. / embed_dim)
     features = lambda nodes, mode: feature_modules[mode](
-        torch.autograd.Variable(torch.FloatTensor([node_maps[mode][n] for n in nodes] if mode != 'song' else [id_to_embed[n] for n in nodes]) + 1))
+        torch.autograd.Variable(torch.FloatTensor([node_maps[mode][n] for n in nodes] if mode != 'song' else [id_to_embed[n[2:]] for n in nodes]) + 1))
     graph = Graph(features, feature_dims, rels, adj_lists)
     return graph, feature_modules, node_maps
 

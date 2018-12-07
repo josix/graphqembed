@@ -35,7 +35,6 @@ if args.cuda:
     graph.features = cudify(feature_modules, node_maps)
 out_dims = {mode: args.embed_dim for mode in graph.relations}
 
-"""
 print "Loading edge data.."
 train_queries = load_queries_by_formula(args.data_dir + "/train_edges.pkl")
 val_queries = load_test_queries_by_formula(args.data_dir + "/val_edges.pkl")
@@ -52,7 +51,7 @@ for i in range(2, 4):
         args.data_dir + "/test_queries_{:d}.pkl".format(i))
     test_queries["one_neg"].update(i_test_queries["one_neg"])
     test_queries["full_neg"].update(i_test_queries["full_neg"])
-"""
+
 enc = get_encoder(args.depth, graph, out_dims, feature_modules, args.cuda)
 dec = get_metapath_decoder(graph, enc.out_dims if args.depth > 0 else out_dims, args.decoder)
 inter_dec = get_intersection_decoder(graph, out_dims, args.inter_decoder)
@@ -82,8 +81,7 @@ model_file = args.model_dir + "/{data:s}-{depth:d}-{embed_dim:d}-{lr:f}-{decoder
     decoder=args.decoder,
     inter_decoder=args.inter_decoder)
 logger = setup_logging(log_file)
-"""
+
 run_train(enc_dec, optimizer, train_queries, val_queries, test_queries, logger,
           max_burn_in=args.max_burn_in, val_every=args.val_every, max_iter=args.max_iter, model_file=model_file)
 torch.save(enc_dec.state_dict(), model_file)
-"""
