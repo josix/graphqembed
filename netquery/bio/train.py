@@ -10,7 +10,7 @@ from torch import optim
 
 parser = ArgumentParser()
 parser.add_argument("--embed_dim", type=int, default=64)
-parser.add_argument("--data_dir", type=str, default="./data/pkl-100w")
+parser.add_argument("--data_dir", type=str, default="./data")
 parser.add_argument("--lr", type=float, default=0.01)
 parser.add_argument("--depth", type=int, default=0)
 parser.add_argument("--batch_size", type=int, default=512)

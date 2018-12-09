@@ -1,5 +1,6 @@
 import cPickle as pickle
 import torch
+import numpy as np
 from collections import OrderedDict, defaultdict
 from multiprocessing import Process
 import random
@@ -17,17 +18,26 @@ def load_graph(data_dir, embed_dim, id_to_embed):
     feature_dims = {m: embed_dim for m in rels}
     feature_modules = {m: torch.nn.Embedding(len(node_maps[m]) + 1, embed_dim) for m in rels}
     for mode in rels:
-        feature_modules[mode].weight.data.normal_(0, 1. / embed_dim)
+        if mode != 'song':
+            feature_modules[mode].weight.data.normal_(0, 1. / embed_dim)
+        else:
+            l = list()
+            for id_, vector in id_to_embed.iteritems():
+                if id_[0] == 'i':
+                    l.append([float(i) for i in vector])
+            l.append([0 for i in range(embed_dim)])
+            l.append([0 for i in range(embed_dim)])
+            feature_modules[mode].weight.data.copy_(torch.from_numpy(np.matrix(l)))
     features = lambda nodes, mode: feature_modules[mode](
-        torch.autograd.Variable(torch.FloatTensor([node_maps[mode][n] for n in nodes] if mode != 'song' else [id_to_embed[n[2:]] for n in nodes]) + 1))
+        torch.autograd.Variable(torch.LongTensor([node_maps[mode][n] for n in nodes]) + 1))
     graph = Graph(features, feature_dims, rels, adj_lists)
     return graph, feature_modules, node_maps
 
 
 def load_embed(data_dir):
-    with open(data_dir + "/kkbox.rep", "r") as f_in:
+    with open(data_dir + "/rep201516.txt", "r") as f_in:
         f_in.readline()
-        id_to_embed = {line.strip().split(" ")[0][2:]: line.strip().split(" ")[
+        id_to_embed = {line.strip().split(" ")[0]: line.strip().split(" ")[
             1:] for line in f_in}
     return id_to_embed
 
@@ -93,7 +103,9 @@ def make_train_test_edge_data(data_dir):
 
 def _discard_negatives(file_name, small_prop=0.9):
     queries = pickle.load(open(file_name, "rb"))
-#    queries = [q if random.random() > small_prop else (q[0],[random.choice(tuple(q[1]))], None if q[2] is None else [random.choice(tuple(q[2]))]) for q in queries]
+# queries = [q if random.random() > small_prop else
+# (q[0],[random.choice(tuple(q[1]))], None if q[2] is None else
+# [random.choice(tuple(q[2]))]) for q in queries]
     queries = [q if random.random() > small_prop else (q[0], [random.choice(list(q[1]))], None if q[
         2] is None else [random.choice(list(q[2]))]) for q in queries]
     pickle.dump(queries, open(file_name.split(".")[
