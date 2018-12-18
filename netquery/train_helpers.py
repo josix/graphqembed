@@ -86,11 +86,6 @@ def run_train(model, optimizer, train_queries, val_queries, test_queries, logger
                 logger.info("Fully converged at iteration {:d}".format(i))
                 break
 
-        print loss
-        print loss.item()
-        print losses
-        print ema_loss
-
         losses, ema_loss = update_loss(loss.item(), losses, ema_loss)
         loss.backward()
         optimizer.step()
@@ -103,7 +98,10 @@ def run_train(model, optimizer, train_queries, val_queries, test_queries, logger
             if edge_conv:
                 vals.append(np.mean(v.values()))
             else:
-                vals.append(v["1-chain"])
+                try:
+                    vals.append(v["1-chain"])
+                except KeyError:
+                    continue
 
     v = run_eval(model, test_queries, i, logger)
     logger.info("Test macro-averaged val: {:f}".format(np.mean(v.values())))

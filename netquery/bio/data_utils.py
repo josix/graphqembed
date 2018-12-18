@@ -13,21 +13,22 @@ from netquery.graph import Graph, Query, _reverse_edge
 def load_graph(data_dir, embed_dim, id_to_embed):
     rels, adj_lists, node_maps = pickle.load(open(data_dir + "/graph_data.pkl", "rb"))
     node_maps = {m: {n: i for i, n in enumerate(id_list)} for m, id_list in node_maps.iteritems()}
+    # node_maps[mode][node_id] : index
     for m in node_maps:
         node_maps[m][-1] = -1
     feature_dims = {m: embed_dim for m in rels}
     feature_modules = {m: torch.nn.Embedding(len(node_maps[m]) + 1, embed_dim) for m in rels}
-    for mode in rels:
-        if mode != 'song':
+    for mode in node_maps.keys():
+        if mode != 'song' or mode != 'user':
             feature_modules[mode].weight.data.normal_(0, 1. / embed_dim)
-        else:
-            l = list()
-            for id_, vector in id_to_embed.iteritems():
-                if id_[0] == 'i':
-                    l.append([float(i) for i in vector])
-            l.append([0 for i in range(embed_dim)])
-            l.append([0 for i in range(embed_dim)])
-            feature_modules[mode].weight.data.copy_(torch.from_numpy(np.matrix(l)))
+            continue
+        embedding_matrix = list()
+        for id_ in node_maps[mode].keys():
+            if mode == "user":
+                embedding_matrix.append([ float(value) for value in id_to_embed["u{}".format(id_)]])
+            elif mode == "song":
+                embedding_matrix.append([ float(value) for value in id_to_embed["i{}".format(id_)]])
+        feature_modules[mode].weight.data.copy_(torch.from_numpy(np.matrix(embedding_matrix)))
     features = lambda nodes, mode: feature_modules[mode](
         torch.autograd.Variable(torch.LongTensor([node_maps[mode][n] for n in nodes]) + 1))
     graph = Graph(features, feature_dims, rels, adj_lists)
@@ -35,7 +36,7 @@ def load_graph(data_dir, embed_dim, id_to_embed):
 
 
 def load_embed(data_dir):
-    with open(data_dir + "/rep201516.txt", "r") as f_in:
+    with open(data_dir + "/user-song-openAPI.hpe", "r") as f_in:
         f_in.readline()
         id_to_embed = {line.strip().split(" ")[0]: line.strip().split(" ")[
             1:] for line in f_in}
